@@ -41,13 +41,18 @@ class Post(db.Model):
     __tablename__ = 'posts'
     sno = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(80), nullable=False)
+    slug = db.Column(db.String(25), nullable=False)
+    tagline = db.Column(db.String(25), nullable=False)
     content = db.Column(db.Text, nullable=False)
+    img_url = db.Column(db.String(25), nullable=False)
     date = db.Column(db.DateTime, nullable=False)
 
 
-@app.route('/')
+
+@app.route('/', methods=['GET'])
 def index():  # put application's code here
-    return render_template('index.html', param=params)
+    posts = Post.query.all()
+    return render_template('index.html', param=params, posts=posts)
 
 
 @app.route('/about')
@@ -81,11 +86,10 @@ def contact():
     return render_template('contact.html', param=params)
 
 
-@app.route('/post', methods=['GET'])
-def posts():
-    posts = Post.query.all()
-
-    return render_template('post.html', param=params, posts=posts)
+@app.route("/post/<string:post_slug>", methods=['GET'])
+def post_route(post_slug):
+    post = Post.query.filter_by(slug=post_slug).first()
+    return render_template('post.html', param=params, post=post)
 
 
 if __name__ == '__main__':
