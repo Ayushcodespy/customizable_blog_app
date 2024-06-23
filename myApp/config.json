@@ -1,0 +1,17 @@
+{
+  "params":
+  {
+    "local_server": "True",
+    "local_uri": "mysql+mysqlconnector://root:@localhost/cleanblog",
+    "prod_uri": "mysql+mysqlconnector://root:@localhost/cleanblog",
+    "tw_url": "https://twitter.com/cleanblog",
+    "fb_url": "https://facebook.com/cleanblog",
+    "gh_url": "https://github.com/cleanblog",
+    "blog_name": "Ayush's Blog",
+    "mail_username": "patelayush.satna@gmail.com",
+    "mail_password": "jlyw stso gslm vbey",
+    "rec_gmail_username": "codestech01@gmail.com"
+  }
+
+}
+
