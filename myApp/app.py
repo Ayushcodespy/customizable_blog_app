@@ -37,6 +37,7 @@ class Contacts(db.Model):
     message = db.Column(db.String(120), nullable=True)
     date = db.Column(db.String(12), nullable=True)
 
+
 class Post(db.Model):
     __tablename__ = 'posts'
     sno = db.Column(db.Integer, primary_key=True)
@@ -46,7 +47,6 @@ class Post(db.Model):
     content = db.Column(db.Text, nullable=False)
     img_url = db.Column(db.String(25), nullable=False)
     date = db.Column(db.DateTime, nullable=False)
-
 
 
 @app.route('/', methods=['GET'])
