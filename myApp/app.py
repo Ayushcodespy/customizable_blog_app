@@ -1,14 +1,16 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for, session
 from flask_sqlalchemy import SQLAlchemy
 import json
 from datetime import datetime
 from flask_mail import Mail, Message
+import math
 
 with open('config.json', 'r') as c:
     params = json.load(c)["params"]
 
 local_server = True
 app = Flask(__name__)
+app.secret_key = "super-secret-key"
 
 # mail = Mail(app)
 
@@ -37,7 +39,6 @@ class Contacts(db.Model):
     message = db.Column(db.String(120), nullable=True)
     date = db.Column(db.String(12), nullable=True)
 
-
 class Post(db.Model):
     __tablename__ = 'posts'
     sno = db.Column(db.Integer, primary_key=True)
@@ -49,10 +50,29 @@ class Post(db.Model):
     date = db.Column(db.DateTime, nullable=False)
 
 
+
 @app.route('/', methods=['GET'])
 def index():  # put application's code here
     posts = Post.query.all()
-    return render_template('index.html', param=params, posts=posts)
+    # pagination
+    last = math.ceil(len(posts)/int(params['no_of_posts']))
+    page = request.args.get('page')
+    if(not str(page).isnumeric()):
+        page = 1
+    page = int(page)
+    posts = posts[(page-1)*int(params['no_of_posts']) : (page-1)*int(params['no_of_posts']) + int(params['no_of_posts'])]
+    if (page == 1):
+        prev ="#"
+        next = "/?page=" + str(page+1)
+    elif (page == last):
+        prev = "/?page=" + str(page-1)
+        next = "#"
+    else:
+        prev = "/?page=" + str(page-1)
+        next = "/?page=" + str(page+1)
+
+
+    return render_template('index.html', param=params, posts=posts, prev=prev, next=next)
 
 
 @app.route('/about')
@@ -92,5 +112,72 @@ def post_route(post_slug):
     return render_template('post.html', param=params, post=post)
 
 
+@app.route("/admin_login", methods=['GET', 'POST'])
+def login():
+    if ('user' in session and session['user'] == 'admin'):
+        return redirect(url_for('dashboard'))
+
+    if (request.method == 'POST'):
+        username = request.form['admin_username']
+        password = request.form['admin_password']
+        if (username == "admin" and password == "admin"):
+            session['user'] = username
+            return redirect(url_for('dashboard'))
+        else:
+            error = "Invalid username or password"
+            return render_template('admin_login.html', error=error)
+    return render_template('admin_login.html')
+
+@app.route("/dashboard")
+def dashboard():
+    posts = Post.query.all()
+    return render_template('dashboard.html', param=params, posts=posts)
+
+
+@app.route("/edit/<int:sno>", methods=['GET', 'POST'])
+def edit(sno):
+    if ('user' in session and session['user'] == 'admin'):
+        if request.method == 'POST':
+            ed_title = request.form['title']
+            ed_tagline = request.form['tagline']
+            ed_content = request.form['content']
+            ed_img_url = request.form['img_url']
+            ed_date = datetime.now()
+            ed_slug = request.form['slug']
+
+            if (sno == 0):
+                post = Post(title=ed_title, tagline=ed_tagline, slug=ed_slug, img_url=ed_img_url, content=ed_content, date=ed_date)
+                db.session.add(post)
+                db.session.commit()
+                return redirect(url_for('dashboard'))
+
+            else:
+                post = Post.query.filter_by(sno=sno).first()
+                post.title = ed_title
+                post.tagline = ed_tagline
+                post.slug = ed_slug
+                post.date = ed_date
+                post.img_url = ed_img_url
+                post.content = ed_content
+                db.session.commit()
+                return redirect(url_for('dashboard'))
+
+        post = Post.query.filter_by(sno=sno).first()
+        return render_template('edit.html', param=params, post=post, sno=sno)
+
+@app.route("/delete/<int:sno>" , methods=['GET', 'POST'])
+def delete(sno):
+    post = Post.query.filter_by(sno=sno).delete()
+    db.session.commit()
+    return redirect(url_for('dashboard'))
+
+
+@app.route("/admin_logout")
+def logout():
+    if 'user' in session:
+        session.pop('user')
+    return redirect(url_for('index'))
+
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(port=5001, debug=True)
