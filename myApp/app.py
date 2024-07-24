@@ -129,12 +129,22 @@ def login():
     return render_template('admin_login.html')
 
 
+# @app.route("/dashboard")
+# def dashboard():
+#     posts = Post.query.all()
+#     return render_template('dashboard.html', param=params, posts=posts)
+
 @app.route("/dashboard")
 def dashboard():
+    if 'user' not in session or session['user'] != 'admin':
+        return redirect(url_for('login'))
+
     posts = Post.query.all()
-    return render_template('dashboard.html', param=params, posts=posts)
-
-
+    response = make_response(render_template('dashboard.html', param=params, posts=posts))
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '-1'
+    return response
 
 @app.route("/edit/<int:sno>", methods=['GET', 'POST'])
 def edit(sno):
